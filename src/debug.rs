@@ -6,13 +6,13 @@ pub fn disasemble_chunk(chunk: &Chunk, name: &str) {
 
     let mut offset: usize = 0;
     while offset < chunk.code.len() {
-        offset = disasemble_instr(chunk, offset);
+        offset = disassemble_instr(chunk, offset);
     }
 }
 
-fn disasemble_instr(chunk: &Chunk, offset: usize) -> usize {
+pub fn disassemble_instr(chunk: &Chunk, offset: usize) -> usize {
     print!("{:04} ", offset);
-    if offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1] {
+    if offset > 0 && get_line(chunk, offset) == get_line(chunk, offset - 1) {
         print!("   | ");
     } else {
         print!("{:4} ", get_line(chunk, offset));
@@ -20,12 +20,13 @@ fn disasemble_instr(chunk: &Chunk, offset: usize) -> usize {
 
     let instruction: Op = chunk.code[offset];
     match instruction {
-        Op::Return => {
-            return simple_instr("OP_RETURN", offset);
-        },
-        Op::Constant(index) => {
-            return constant_instr("OP_CONSTANT", chunk, index, offset);
-        },
+        Op::Constant(index) => return constant_instr("OP_CONSTANT", chunk, index, offset),
+        Op::Negate => return simple_instr("OP_NEGATE", offset),
+        Op::Add => return simple_instr("OP_ADD", offset),
+        Op::Subtract => return simple_instr("OP_SUBTRACT", offset),
+        Op::Multiply => return simple_instr("OP_MULTIPLY", offset),
+        Op::Divide => return simple_instr("OP_DIVIDE", offset),
+        Op::Return => return simple_instr("OP_RETURN", offset),
     }
 }
 

@@ -2,8 +2,13 @@ use crate::value::*;
 
 #[derive(Clone, Copy)]
 pub enum Op {
-    Return,
     Constant(usize),
+    Negate,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Return,
 }
 
 #[derive(Default)]
@@ -27,7 +32,7 @@ pub fn add_constant(chunk: &mut Chunk, value: Value, line: u16) -> usize {
 // Assumes that lines are added in order
 fn update_lines(chunk: &mut Chunk, line: u16) {
     if chunk.lines.len() == 0 {
-        chunk.lines.push((0, 1));
+        chunk.lines.push((line, 1));
     } else {
         let highest_index = chunk.lines.len() - 1;
         let (highest_line, ops) = chunk.lines[highest_index];
@@ -48,5 +53,5 @@ pub fn get_line(chunk: &Chunk, offset: usize) -> u16 {
         }
         offset_copy -= ops as usize;
     }
-    42
+    42 // Jank
 }

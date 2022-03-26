@@ -1,5 +1,6 @@
 use crate::chunk::*;
-#[cfg(feature = "debug_trace_execution")] 
+use crate::compiler::*;
+#[cfg(feature = "debug_trace_execution")]
 use crate::debug::*;
 use crate::value::*;
 
@@ -27,22 +28,23 @@ impl<'a> VM<'a> {
         let vm: VM = Self {
             chunk: &chunk,
             stack: Vec::new(),
-            ip: 0
+            ip: 0,
         };
         vm
     }
 
-    pub fn interpret(&mut self) -> InterpretResult {
-        // self.chunk = &chunk;
+    pub fn interpret(&mut self, source: &str) -> InterpretResult {
+        compile(source);
         self.ip = 0;
-        self.run()
+        InterpretResult::Ok
+        // self.run()
     }
 
     fn push(&mut self, value: Value) {
         self.stack.push(value);
     }
 
-    fn pop(&mut  self) -> Value {
+    fn pop(&mut self) -> Value {
         self.stack.pop().expect("Empty stack")
     }
 

@@ -12,10 +12,10 @@ pub fn disasemble_chunk(chunk: &Chunk, name: &str) {
 
 pub fn disassemble_instr(chunk: &Chunk, offset: usize) -> usize {
     print!("{:04} ", offset);
-    if offset > 0 && get_line(chunk, offset) == get_line(chunk, offset - 1) {
+    if offset > 0 && chunk.get_line(offset) == chunk.get_line(offset - 1) {
         print!("   | ");
     } else {
-        print!("{:4} ", get_line(chunk, offset));
+        print!("{:4} ", chunk.get_line(offset));
     }
 
     let instruction: Op = chunk.code[offset];

@@ -1,31 +1,59 @@
 mod chunk;
-use chunk::*;
+mod compiler;
 mod debug;
+mod scanner;
 mod value;
 mod vm;
-use vm::VM;
+
+use std::env;
+use std::fs;
+use std::io::{self, Write};
+
+use chunk::*;
+use vm::{InterpretResult, VM};
+
+fn repl(vm: &mut VM) {
+    loop {
+        print!("> ");
+        io::stdout().flush().unwrap();
+        let mut line: String = String::new();
+        io::stdin()
+            .read_line(&mut line)
+            .expect("Error reading line from REPL");
+        if line.is_empty() {
+            break;
+        }
+        vm.interpret(&line);
+    }
+}
+
+fn run_file(vm: &mut VM, path: &str) {
+    let result = match fs::read_to_string(path) {
+        Ok(content) => vm.interpret(&content),
+        Err(error) => {
+            eprintln!("Error reading file {}: {}", path, error);
+            std::process::exit(74);
+        }
+    };
+    match result {
+        InterpretResult::CompileError => std::process::exit(65),
+        InterpretResult::RuntimeError => std::process::exit(70),
+        InterpretResult::Ok => std::process::exit(0),
+    }
+}
 
 fn main() {
-    let mut chunk: Chunk = Default::default();
+    let args: Vec<String> = env::args().collect();
 
-    let index: usize = add_constant(&mut chunk, 1.2, 12);
-    add_operator(&mut chunk, Op::Constant(index), 12);
-
-    let index: usize = add_constant(&mut chunk, 3.4, 12);
-    add_operator(&mut chunk, Op::Constant(index), 12);
-
-    add_operator(&mut chunk, Op::Add, 12);
-
-    let index: usize = add_constant(&mut chunk, 5.6, 12);
-    add_operator(&mut chunk, Op::Constant(index), 12);
-
-    add_operator(&mut chunk, Op::Divide, 12);
-
-    add_operator(&mut chunk, Op::Negate, 12);
-    add_operator(&mut chunk, Op::Return, 12);
-
+    let mut chunk: Chunk = Chunk::new();
     let mut vm: VM = VM::new(&mut chunk);
-    vm.interpret();
-    println!("");
-    // debug::disasemble_chunk(&chunk, "test chunk");
+
+    match args.len() {
+        1 => repl(&mut vm),
+        2 => run_file(&mut vm, &args[1]),
+        _ => {
+            eprintln!("Usage: manganate [path]");
+            std::process::exit(64);
+        }
+    }
 }

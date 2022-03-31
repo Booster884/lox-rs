@@ -1,7 +1,5 @@
 use crate::chunk::*;
 use crate::compiler::*;
-#[cfg(feature = "debug_trace_execution")]
-use crate::debug::*;
 use crate::value::*;
 
 pub enum InterpretResult {
@@ -17,27 +15,29 @@ pub enum BinOp {
     Divide,
 }
 
-pub struct VM<'a> {
-    pub chunk: &'a Chunk,
+pub struct VM {
+    pub chunk: Chunk,
     pub stack: Vec<Value>,
     pub ip: usize,
 }
 
-impl<'a> VM<'a> {
-    pub fn new(chunk: &'a Chunk) -> Self {
-        let vm: VM = Self {
-            chunk: &chunk,
+impl VM {
+    pub fn new() -> Self {
+        Self {
+            chunk: Chunk::new(),
             stack: Vec::new(),
             ip: 0,
-        };
-        vm
+        }
     }
 
     pub fn interpret(&mut self, source: &str) -> InterpretResult {
-        compile(source);
+        if !compile(&mut self.chunk, source) {
+            return InterpretResult::CompileError;
+        }
+
         self.ip = 0;
-        InterpretResult::Ok
-        // self.run()
+        // self.chunk = chunk;
+        self.run()
     }
 
     fn push(&mut self, value: Value) {
@@ -66,7 +66,7 @@ impl<'a> VM<'a> {
             #[cfg(feature = "debug_trace_execution")]
             {
                 println!("          {:?}", self.stack);
-                disassemble_instr(self.chunk, self.ip);
+                crate::debug::disassemble_instr(&self.chunk, self.ip);
             }
             self.ip += 1;
 

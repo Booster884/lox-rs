@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TokenType {
     LeftParen,
     RightParen,
@@ -48,11 +48,21 @@ pub enum TokenType {
     Eof,
 }
 
-// #[derive(Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct Token<'sc> {
     pub kind: TokenType,
     pub line: usize,
     pub lexeme: &'sc str,
+}
+
+impl<'sc> Token<'sc> {
+    pub fn new() -> Self {
+        Self {
+            kind: TokenType::Nil,
+            line: 0,
+            lexeme: "nil",
+        }
+    }
 }
 
 pub struct Scanner<'sc> {
@@ -92,10 +102,12 @@ impl<'sc> Scanner<'sc> {
         }
     }
 
-    pub fn scan_token(&mut self) -> Token {
+    pub fn scan_token(&mut self) -> Token<'sc> {
+        println!("{}, {}", self.current, self.code.len());
+
         self.skip_whitespace();
         self.start = self.current;
-
+        
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }
@@ -162,7 +174,7 @@ impl<'sc> Scanner<'sc> {
     }
 
     fn skip_whitespace(&mut self) {
-        loop {
+        while !self.is_at_end() {
             let char = self.peek();
             let _: u8 = match char {
                 b' ' | b'\r' | b'\t' => self.advance(),

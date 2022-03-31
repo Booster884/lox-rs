@@ -9,7 +9,6 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
-use chunk::*;
 use vm::{InterpretResult, VM};
 
 fn repl(vm: &mut VM) {
@@ -45,8 +44,7 @@ fn run_file(vm: &mut VM, path: &str) {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut chunk: Chunk = Chunk::new();
-    let mut vm: VM = VM::new(&mut chunk);
+    let mut vm: VM = VM::new();
 
     match args.len() {
         1 => repl(&mut vm),

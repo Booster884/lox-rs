@@ -46,7 +46,11 @@ struct ParseRule<'sc> {
 }
 
 impl<'sc> ParseRule<'sc> {
-    pub fn new(prefix: Option<ParseFn<'sc>>, infix: Option<ParseFn<'sc>>, precedence: Precedence) -> Self {
+    pub fn new(
+        prefix: Option<ParseFn<'sc>>,
+        infix: Option<ParseFn<'sc>>,
+        precedence: Precedence,
+    ) -> Self {
         Self {
             prefix,
             infix,
@@ -63,7 +67,7 @@ pub struct Parser<'sc> {
 
     current_chunk: &'sc mut Chunk,
     scanner: Scanner<'sc>,
-    rules: HashMap<TokenType, ParseRule <'sc>>,
+    rules: HashMap<TokenType, ParseRule<'sc>>,
 }
 
 impl<'sc> Parser<'sc> {
@@ -88,31 +92,31 @@ impl<'sc> Parser<'sc> {
         rule(Semicolon, None, None, P::None);
         rule(Slash, None, Some(Parser::binary), P::Factor);
         rule(Star, None, Some(Parser::binary), P::Factor);
-        rule(Bang, None, None, P::None);
-        rule(BangEqual, None, None, P::None);
+        rule(Bang, Some(Parser::unary), None, P::None);
+        rule(BangEqual, None, Some(Parser::binary), P::Equality);
         rule(Equal, None, None, P::None);
-        rule(EqualEqual, None, None, P::None);
-        rule(Greater, None, None, P::None);
-        rule(GreaterEqual, None, None, P::None);
-        rule(Less, None, None, P::None);
-        rule(LessEqual, None, None, P::None);
+        rule(EqualEqual, None, Some(Parser::binary), P::Equality);
+        rule(Greater, None, Some(Parser::binary), P::Comparison);
+        rule(GreaterEqual, Some(Parser::binary), None, P::Comparison);
+        rule(Less, None, Some(Parser::binary), P::Comparison);
+        rule(LessEqual, None, Some(Parser::binary), P::Comparison);
         rule(Identifier, None, None, P::None);
         rule(String, None, None, P::None);
         rule(Number, Some(Parser::number), None, P::None);
         rule(And, None, None, P::None);
         rule(Class, None, None, P::None);
         rule(Else, None, None, P::None);
-        rule(False, None, None, P::None);
+        rule(False, Some(Parser::literal), None, P::None);
         rule(For, None, None, P::None);
         rule(Fun, None, None, P::None);
         rule(If, None, None, P::None);
-        rule(Nil, None, None, P::None);
+        rule(Nil, Some(Parser::literal), None, P::None);
         rule(Or, None, None, P::None);
         rule(Print, None, None, P::None);
         rule(Return, None, None, P::None);
         rule(Super, None, None, P::None);
         rule(This, None, None, P::None);
-        rule(True, None, None, P::None);
+        rule(True, Some(Parser::literal), None, P::None);
         rule(Var, None, None, P::None);
         rule(While, None, None, P::None);
         rule(Error, None, None, P::None);
@@ -169,7 +173,7 @@ impl<'sc> Parser<'sc> {
             return;
         }
         self.panic_mode = true;
-        // self.had_error = true;
+        self.had_error = true;
 
         eprint!("[line {}] Error", token.line);
         match token.kind {
@@ -201,8 +205,17 @@ impl<'sc> Parser<'sc> {
     }
 
     fn number(&mut self) {
-        let value = self.previous.lexeme.parse::<f32>().unwrap();
-        self.emit_constant(value);
+        let value = self.previous.lexeme.parse::<f64>().unwrap();
+        self.emit_constant(Value::Number(value));
+    }
+
+    fn literal(&mut self) {
+        match self.previous.kind {
+            TokenType::False => self.emit(Op::False),
+            TokenType::True => self.emit(Op::True),
+            TokenType::Nil => self.emit(Op::Nil),
+            _ => panic!("Impossible literal type"),
+        }
     }
 
     fn grouping(&mut self) {
@@ -216,7 +229,8 @@ impl<'sc> Parser<'sc> {
 
         match operator_type {
             TokenType::Minus => self.emit(Op::Negate),
-            _ => {},
+            TokenType::Bang => self.emit(Op::Not),
+            _ => {}
         }
     }
 
@@ -230,7 +244,13 @@ impl<'sc> Parser<'sc> {
             TokenType::Minus => self.emit(Op::Subtract),
             TokenType::Star => self.emit(Op::Multiply),
             TokenType::Slash => self.emit(Op::Divide),
-            _ => {},
+            TokenType::BangEqual => self.emit(Op::NotEqual),
+            TokenType::EqualEqual => self.emit(Op::Equal),
+            TokenType::Greater => self.emit(Op::Greater),
+            TokenType::GreaterEqual => self.emit(Op::GreaterEqual),
+            TokenType::Less => self.emit(Op::Less),
+            TokenType::LessEqual => self.emit(Op::LessEqual),
+            _ => {}
         }
     }
 
@@ -242,13 +262,13 @@ impl<'sc> Parser<'sc> {
     fn parse_precedence(&mut self, precedence: Precedence) {
         self.advance();
         let prefix_rule = self.get_rule(self.previous.kind).prefix;
-        
+
         let prefix_rule = match prefix_rule {
             Some(rule) => rule,
             None => {
                 self.error("Expect expression.");
                 return;
-            },
+            }
         };
         prefix_rule(self);
 

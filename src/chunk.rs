@@ -9,6 +9,16 @@ pub enum Op {
     Multiply,
     Divide,
     Return,
+    False,
+    True,
+    Nil,
+    Not,
+    Equal,
+    NotEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
 }
 
 #[derive(Default)]

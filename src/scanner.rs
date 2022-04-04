@@ -103,11 +103,9 @@ impl<'sc> Scanner<'sc> {
     }
 
     pub fn scan_token(&mut self) -> Token<'sc> {
-        println!("{}, {}", self.current, self.code.len());
-
         self.skip_whitespace();
         self.start = self.current;
-        
+
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }

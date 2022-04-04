@@ -9,7 +9,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 
-use vm::{InterpretResult, VM};
+use vm::{LoxError, VM};
 
 fn repl(vm: &mut VM) {
     loop {
@@ -22,22 +22,23 @@ fn repl(vm: &mut VM) {
         if line.is_empty() {
             break;
         }
-        vm.interpret(&line);
+        vm.interpret(&line).ok();
     }
 }
 
 fn run_file(vm: &mut VM, path: &str) {
-    let result = match fs::read_to_string(path) {
-        Ok(content) => vm.interpret(&content),
+    let code = match fs::read_to_string(path) {
+        Ok(content) => content,
         Err(error) => {
             eprintln!("Error reading file {}: {}", path, error);
             std::process::exit(74);
         }
     };
-    match result {
-        InterpretResult::CompileError => std::process::exit(65),
-        InterpretResult::RuntimeError => std::process::exit(70),
-        InterpretResult::Ok => std::process::exit(0),
+    if let Err(error) = vm.interpret(&code) {
+        match error {
+            LoxError::CompileError => std::process::exit(65),
+            LoxError::RuntimeError => std::process::exit(70),
+        }
     }
 }
 

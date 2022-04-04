@@ -1,5 +1,5 @@
 [package]
-name = "manganate"
+name = "lox-rs"
 version = "0.0.0"
 authors = ["Sebastian <sbooster884@gmail.com>"]
 edition = "2018"

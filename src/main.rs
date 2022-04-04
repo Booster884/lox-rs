@@ -51,7 +51,7 @@ fn main() {
         1 => repl(&mut vm),
         2 => run_file(&mut vm, &args[1]),
         _ => {
-            eprintln!("Usage: manganate [path]");
+            eprintln!("Usage: lox-rs [path]");
             std::process::exit(64);
         }
     }
